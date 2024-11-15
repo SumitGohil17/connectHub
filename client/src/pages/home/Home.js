@@ -5,6 +5,8 @@ import SearchBar from "../../components/SearchBar";
 import { FaPlay, FaInfoCircle, FaFire, FaClock } from "react-icons/fa";
 import VideoJS from "../../components/Videojs";
 import Cookies from "js-cookie";
+import { useLogin } from "../../contexthelp/LoginContext";
+import NavBar from "../../components/NavBar";
 
 const Home = () => {
   // const { isLog } = useLogin();
@@ -13,9 +15,8 @@ const Home = () => {
   const [trendingVideos, setTrendingVideos] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const [isLogged, setisLogged] = useState(Cookies.get("jwtToken"));
-
-  let isLog = !!isLogged;
+  const {isLog, user} = useLogin();
+  
 
   useEffect(() => {
     fetchFeaturedVideo();
@@ -119,12 +120,6 @@ const Home = () => {
     }, 1000);
   };
 
-  const handleLogout = () => {
-    Cookies.remove("jwtToken");
-
-    window.location.reload();
-  };
-
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -135,35 +130,7 @@ const Home = () => {
 
   return (
     <div className="bg-gradient-to-br from-gray-900 to-gray-800 text-white min-h-screen">
-      <header className="flex bg-black bg-opacity-50 backdrop-filter backdrop-blur-md py-4 fixed top-0 left-0 right-0 z-50">
-        <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-purple-500 ml-[5%]">
-          ConnectHub
-        </h1>
-        <div className="container mx-auto px-4 flex justify-end items-end right-0">
-          <SearchBar />
-          {isLog ? (
-            <button
-              onClick={handleLogout}
-              className="flex items-end bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-sm mx-1"
-            >
-              Logout
-            </button>
-          ) : (
-            <>
-              <NavLink to="/auth/login">
-                <button className="flex items-end bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-sm mx-1">
-                  Login
-                </button>
-              </NavLink>
-              <NavLink to="/auth/signup">
-                <button className="flex items-end bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-sm">
-                  Sign Up
-                </button>
-              </NavLink>
-            </>
-          )}
-        </div>
-      </header>
+      <NavBar/>
 
       <main className="container mx-auto px-4 pt-24 pb-12">
         {featuredVideo && (

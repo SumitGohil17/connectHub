@@ -1,6 +1,7 @@
 const express = require("express");
 const http = require('http');
 const { Server } = require('socket.io');
+require("dotenv").config({path: 'config.env'});
 const path = require("path");
 const { generateRoomId } = require("./utils"); 
 const connectToMongo = require('./db.connection');
@@ -151,10 +152,6 @@ app.get('*', (req, res) => {
   }
 });
 
-
-// app.listen(port, () => {
-//   console.log(`Server is running on port ${port}`);
-// });
 
 server.listen(port, () => {
   console.log(`Server is running on port ${port}`);

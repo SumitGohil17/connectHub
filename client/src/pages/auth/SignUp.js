@@ -31,7 +31,7 @@ function SignUp() {
       alert('Passwords do not match');
     } else {
       try {
-          const response = await fetch('http://127.0.0.1:5000/api/user/signup', {
+          const response = await fetch('http://127.0.0.1:5001/api/user/signup', {
               method: 'POST',
               Credentials:"include",
               headers: {

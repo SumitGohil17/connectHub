@@ -2,15 +2,18 @@ import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import VideoJS from "../../components/Videojs";
 import ChatBox from "../../components/ChatBox";
-import SearchBar from "../../components/SearchBar";
 import { FaUserFriends, FaCopy } from "react-icons/fa";
+import { useLogin } from "../../contexthelp/LoginContext";
+import NavBar from "../../components/NavBar";
 
 const VideoPlayer = () => {
   const { id, roomId } = useParams();
   const [video, setVideo] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [watchPartyUrl, setWatchPartyUrl] = useState("");
-  const [showChat, setShowChat] = useState(true); 
+  const [showChat, setShowChat] = useState(true);
+
+  const { isLog, user } = useLogin()
 
   useEffect(() => {
     fetchVideo(id);
@@ -67,15 +70,7 @@ const VideoPlayer = () => {
 
   return (
     <div className="bg-gradient-to-br from-gray-900 to-gray-800 text-white min-h-screen">
-      <header className="bg-black bg-opacity-50 backdrop-filter backdrop-blur-md py-4 fixed top-0 left-0 right-0 z-50">
-        <div className="container mx-auto px-4 flex justify-between items-center">
-          <Link to="/" className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-purple-500">
-            ConnectHub
-          </Link>
-          <SearchBar />
-        </div>
-      </header>
-
+      <NavBar />
       <main className="container mx-auto px-4 pt-24 pb-12">
         <div className="flex flex-col lg:flex-row gap-8">
           <div className="lg:w-3/4 flex flex-col">
@@ -122,7 +117,11 @@ const VideoPlayer = () => {
 
           {showChat && video && ( // Ensure video is loaded before rendering ChatBox
             <div className="bg-gray-800 rounded-lg overflow-hidden h-[calc(100vh-2rem)] lg:h-[600px] flex flex-col lg:w-1/4"> {/* Adjust width for chat */}
-              <ChatBox chatRoomId={chatRoomId} /> {/* Pass chatRoomId to ChatBox */}
+              {!isLog ? (
+                <h2 className="flex h-full w-full px-[20px] justify-center items-center">please,Login First to join the Live Chat!!</h2>
+              ) : (
+                <ChatBox chatRoomId={chatRoomId} user={user.name} />
+              )}
             </div>
           )}
         </div>

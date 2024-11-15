@@ -6,6 +6,7 @@ import Cookies from 'js-cookie'
 function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
+  const [isLogged, setIsLogged] = useState(Cookies.get('jwtToken'));
   
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -26,7 +27,7 @@ function Login() {
 
     try {
       const response = await fetch(
-        "http://127.0.0.1:5000/api/user/login",
+        "http://127.0.0.1:5001/api/user/login",
         {
           method: "POST",
           headers: {
@@ -46,6 +47,7 @@ function Login() {
           password: "",
         });
         navigate('/');
+        window.location.reload();
       } else {
         alert("login fails");
       }
@@ -61,7 +63,6 @@ function Login() {
     return Cookies.set("jwtToken", serverToken, { expires: 2 / 1440 });
   };
 
-  // let isLog = !!isLogged;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 to-black">

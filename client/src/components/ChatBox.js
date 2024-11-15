@@ -1,15 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
+import Cookies from 'js-cookie';
 import { FaPaperPlane, FaSmile } from 'react-icons/fa';
 import { useParams } from 'react-router-dom'; // Assuming you're using react-router
 const socket = io('http://localhost:5001');
 
-const ChatBox = ({chatRoomId}) => {
+const ChatBox = ({chatRoomId, user}) => {
   const [messages, setMessages] = useState([]);
   const messagesEndRef = useRef(null);
   const [isInRoom, setIsInRoom] = useState(false);
   const [roomId, setRoomId] = useState(chatRoomId);
-  const [userName, setUserName] = useState('');
+  const [userName, setUserName] = useState(user);
   const [messages1, setMessages1] = useState([]);
   const [input, setInput] = useState('');
   const [users, setUsers] = useState([]);
@@ -40,7 +41,7 @@ const ChatBox = ({chatRoomId}) => {
   useEffect(() => {
     if (urlRoomId) {
       setRoomId(urlRoomId);
-      setUserName('Guest'); // Set a default user name if not provided
+      setUserName(user); // Set a default user name if not provided
       // setTimeout(() => {
       //   joinRoom();
       // }, 2000); // Set roomId from URL
@@ -90,6 +91,8 @@ const ChatBox = ({chatRoomId}) => {
 
 
 
+
+
   return (
     <div className="flex flex-col h-full bg-gray-900 rounded-lg overflow-hidden">
       <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-4">
@@ -98,15 +101,13 @@ const ChatBox = ({chatRoomId}) => {
 
       {!isInRoom ? (
         <div className='w-full mt-[50px] flex flex-col items-center justify-center'>
-          { !chatRoomId && (
-            <p className="text-white mb-4">Click on "Watch with Friends" to generate a room ID.</p>
-          )}
           <input
             type="text"
             placeholder="Enter your name"
-            value={userName}
+            value={user}
             className="flex-grow bg-gray-700 text-white px-4 py-2 rounded-sm focus:outline-none focus:ring-2 focus:ring-purple-500 mb-2"
-            onChange={(e) => setUserName(e.target.value)}
+            onChange={(e) => setUserName(user)}
+            readOnly
           />
           <div className="flex space-x-2">
             <button onClick={joinRoom} className="bg-blue-500 text-white rounded p-2 flex-grow">Join Room</button>
@@ -135,12 +136,6 @@ const ChatBox = ({chatRoomId}) => {
               className="flex-grow bg-gray-700 text-white px-4 py-2 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-500"
               placeholder="Type a message..."
             />
-            <button
-              type="button"
-              className="ml-2 text-gray-400 hover:text-yellow-400 transition"
-            >
-              <FaSmile className="w-6 h-6" />
-            </button>
             <button
               type="submit"
               className="ml-2 bg-purple-500 hover:bg-purple-600 text-white rounded-full p-2 transition"

@@ -1,4 +1,3 @@
-
 const express = require("express");
 const { body, validationResult } = require("express-validator");
 const JWT = require("jsonwebtoken");
@@ -6,6 +5,17 @@ const bcryptjs = require("bcryptjs");
 const UserSchema = require("../schema/user.schema");
 const router = express.Router();
 require("dotenv").config();
+
+const authenticateToken = (req, res, next) => {
+  const token = req.headers["authorization"]?.split(" ")[1]; 
+  if (!token) return res.sendStatus(401);
+
+  JWT.verify(token, "private_key", (err, user) => {
+    if (err) return res.sendStatus(403);
+    req.user = user; 
+    next();
+  });
+};
 
 router.post(
   "/signup",
@@ -38,7 +48,7 @@ router.post(
       const jwt = JWT.sign(userId, "private_key"); // generating a jsonWebToken
       
 
-      res.status(200).json({ jwtToken: jwt });
+      res.status(200).json({ jwtToken: jwt , user: req.body.name});
     } catch (e) {
       console.error(e);
       res.status(500).json({ error: e }); // if any error is occurred then throw a INTERNAL SERVER ERROR status (500)
@@ -80,15 +90,20 @@ router.post(
   }
 );
 
-// router.get("/getUserInfo", authMiddleware, async (req, res) => {
-//   try {
-//     const id = req.findUser.id;
-//     const user = await Authentication.findById(id).select("-password");
-//     res.json({ userInfo: user });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ error: error });
-//   }
-// });
+router.get("/getUserInfo", authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.findUser.id; 
+    const userDetails = await UserSchema.findById(userId); 
+
+    if (!userDetails) {
+      return res.status(404).json({ error: "User not found" }); 
+    }
+
+    res.status(200).json({  userDetails }); 
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error });
+  }
+});
 
 module.exports = router;

@@ -97,6 +97,7 @@ const ChatBox = ({chatRoomId, user}) => {
     <div className="flex flex-col h-full bg-gray-900 rounded-lg overflow-hidden">
       <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-4">
         <h2 className="text-xl font-bold text-white">Live Chat</h2>
+        <h2 className="text-xl font-bold text-white">{chatRoomId}</h2>
       </div>
 
       {!isInRoom ? (
@@ -145,8 +146,6 @@ const ChatBox = ({chatRoomId, user}) => {
           </form>
         </>
       )}
-
-
     </div>
   );
 };

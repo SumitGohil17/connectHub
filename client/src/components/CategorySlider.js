@@ -3,12 +3,22 @@ import { Link } from "react-router-dom";
 import { FaChevronRight, FaPlay } from "react-icons/fa";
 
 const CategorySlider = ({ category }) => {
+  // Map category names to their YouTube category IDs
+  const categoryIds = {
+    'Action': '1',
+    'Sports': '17',
+    'Music': '10'
+  };
+
   return (
-    <section className="mb-12">
+    <section className="mb-16">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">{category.name}</h2>
-        <Link to={`/category/${category.name.toLowerCase()}`} className="text-red-500 hover:text-red-600 flex items-center">
-          View All <FaChevronRight className="ml-1" />
+        <Link 
+          to={`/category/${categoryIds[category.name]}/${encodeURIComponent(category.name)}`}
+          className="text-red-500 hover:text-red-600 transition duration-300"
+        >
+          See All
         </Link>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">

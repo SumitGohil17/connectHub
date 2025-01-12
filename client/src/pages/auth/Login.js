@@ -60,7 +60,7 @@ function Login() {
   };
 
   const Storetoken = (serverToken) => {
-    return Cookies.set("jwtToken", serverToken, { expires: 2 / 1440 });
+    return Cookies.set("jwtToken", serverToken, { expires: 10 });
   };
 
 

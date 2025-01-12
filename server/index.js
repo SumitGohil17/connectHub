@@ -40,7 +40,7 @@ io.on('connection', (socket) => {
     if (!roomId) {
       roomId = generateRoomId();
     }
-    socket.join(roomId);
+    socket.join(roomId);  
     if (!rooms[roomId]) {
       rooms[roomId] = { users: [],isPlaying : true, currentTime: 0 }; // Add currentTime to track video time
     }

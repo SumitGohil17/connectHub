@@ -1,21 +1,18 @@
-import React, { useEffect, useRef, useState } from 'react';
-import videojs from 'video.js';
-import 'video.js/dist/video-js.css';
+import React, { useEffect, useRef } from 'react';
 import io from 'socket.io-client';
+import videojs from 'video.js';
 
-const socket = io('http://localhost:5000'); // Adjust the URL as needed
+const socket = io('http://localhost:5000');
 
-const VideoJS = ({ options, roomId }) => {
+const VideoJS = ({ options, roomId, onReady }) => {
   const videoRef = useRef(null);
   const playerRef = useRef(null);
-  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     socket.emit('join-room', { roomId });
-    setReady(true);
 
     return () => {
-      socket.disconnect();
+      socket.disconnect(); 
     };
   }, [roomId]);
 
@@ -27,47 +24,57 @@ const VideoJS = ({ options, roomId }) => {
       const player = videojs(videoElement, options, () => {
         console.log('player is ready');
         playerRef.current = player;
+        if (onReady) {
+          onReady(player);
+        }
+      });
 
-        player.on('play', () => {
-          socket.emit('video-action', { roomId, type: 'play' });
-          console.log("Video play");
-        });
+      const handlePlay = () => {
+        socket.emit('video-action', { roomId, type: 'play' });
+        console.log("Video play");
+      };
 
-        player.on('pause', () => {
-          socket.emit('video-action', { roomId, type: 'pause' });
-          console.log("Video pause");
-        });
+      const handlePause = () => {
+        socket.emit('video-action', { roomId, type: 'pause' });
+        console.log("Video pause");
+      };
 
-        player.on('timeupdate', () => {
-          const currentTime = player.currentTime();
-          console.log(currentTime);
-          socket.emit('video-timeupdate', { roomId, time: currentTime });
-        });
+      const handleTimeUpdate = () => {
+        const currentTime = player.currentTime();
+        console.log(currentTime);
+        socket.emit('video-timeupdate', { roomId, time: currentTime });
+      };
 
-        socket.on('sync-video', (data) => {
-          if (Math.abs(player.currentTime() - data.time) > 0.5) {
-            player.currentTime(data.time);
-          }
-          if (data.isPlaying && player.paused()) {
-            player.play();
-          } else if (!data.isPlaying && !player.paused()) {
-            player.pause();
-          }
-        });
+      player.on('play', handlePlay);
+      player.on('pause', handlePause);
+      player.on('timeupdate', handleTimeUpdate);
+
+      socket.on('sync-video', (data) => {
+        if (Math.abs(player.currentTime() - data.time) > 0.5) {
+          player.currentTime(data.time);
+        }
+        if (data.isPlaying && player.paused) {
+          player.play();
+        } else if (!data.isPlaying && !player.paused) {
+          player.pause();
+        }
       });
 
       return () => {
-        if (playerRef.current) {
-          playerRef.current.dispose();
-          playerRef.current = null;
-        }
+        player.off('play', handlePlay);
+        player.off('pause', handlePause);
+        player.off('timeupdate', handleTimeUpdate);
       };
     }
-  }, []);
+  }, [options, roomId, onReady]);
 
   return (
-    <div data-vjs-player>
-      <video ref={videoRef} className="video-js vjs-big-play-centered" />
+    <div>
+      <video 
+        ref={videoRef}
+        className="w-full h-full"
+        controls
+      />
     </div>
   );
 };

@@ -142,15 +142,19 @@ io.on('connection', (socket) => {
   });
 });
 
-if (process.env.NODE_ENV === 'production') {
-  // Serve static files
-  app.use(express.static(path.join(__dirname, '../client/build')));
+app.use('/',(req,res) => {
+    res.send("Server is Running");
+})
+
+// if (process.env.NODE_ENV === 'production') {
+//   // Serve static files
+//   app.use(express.static(path.join(__dirname, '../client/build')));
   
-  // Handle React routing
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../client/build/index.html'));
-  });
-}
+//   // Handle React routing
+//   app.get('*', (req, res) => {
+//     res.sendFile(path.join(__dirname, '../client/build/index.html'));
+//   });
+// }
 
 server.listen(port, () => {
   console.log(`Server is running on port ${port}`);

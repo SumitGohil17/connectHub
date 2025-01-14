@@ -1,9 +1,9 @@
 
 const mongoose = require("mongoose");
 
-require("dotenv").config({path: 'config.env'});
+require("dotenv").config();
 
-const url = 'mongodb+srv://Matrix:200417@cluster-videostream.yrvdp.mongodb.net/?retryWrites=true&w=majority&appName=Cluster-VideoStream';
+const url = process.env.DB_URL;
 const connectToMongo = () => {
   mongoose
     .connect(url )

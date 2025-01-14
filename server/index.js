@@ -144,7 +144,7 @@ io.on('connection', (socket) => {
 
 app.use(express.static(path.join(__dirname, '../client/build')));
 
-app.get('*', (req, res) => {
+app.get('/', (req, res) => {
   if (process.env.NODE_ENV === 'production') {
     res.sendFile(path.join(__dirname, '../client/build/index.html'));
   } else {

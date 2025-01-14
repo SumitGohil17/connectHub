@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import ChatBox from "../../components/ChatBox";
-import { FaUserFriends, FaCopy, FaVideo } from "react-icons/fa"; 
+import { FaUserFriends, FaCopy, FaVideo } from "react-icons/fa";
 import { useLogin } from "../../contexthelp/LoginContext";
 import NavBar from "../../components/NavBar";
 import VideoSegments from '../../components/VideoSegments/VideoSegments';
@@ -52,8 +52,8 @@ const VideoPlayer = () => {
       // Get audio URL using youtube-dl or similar service first
       const audioUrl = `https://youtube-dl.org/downloads/latest/youtube-dl -x --audio-format mp3 https://www.youtube.com/watch?v=${video.id}`;
       console.log(audioUrl);
-      
-      
+
+
       // First make request to get audio file
       const audioResponse = await fetch('https://api.assemblyai.com/v2/upload', {
         method: 'POST',
@@ -71,7 +71,7 @@ const VideoPlayer = () => {
       }
 
       const audioData = await audioResponse.json();
-      
+
       // Then transcribe the audio file
       const response = await fetch('https://api.assemblyai.com/v2/transcript', {
         method: 'POST',
@@ -87,34 +87,34 @@ const VideoPlayer = () => {
           format_text: true
         })
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to initiate transcription');
       }
-      
+
       const transcriptData = await response.json();
-      
+
       if (!transcriptData.id) {
         throw new Error('No transcript ID received');
       }
-      
+
       // Poll for completion
       const pollingEndpoint = `https://api.assemblyai.com/v2/transcript/${transcriptData.id}`;
       let shortVideoUrl = null;
       let attempts = 0;
       const maxAttempts = 20; // Prevent infinite polling
-      
+
       while (!shortVideoUrl && attempts < maxAttempts) {
         const pollingResponse = await fetch(pollingEndpoint, {
           headers: {
             'Authorization': '36cd8dcd2a674b78aea1123fd7498b63'
           }
         });
-        
+
         if (!pollingResponse.ok) {
           throw new Error('Polling request failed');
         }
-        
+
         const transcriptionResult = await pollingResponse.json();
 
         if (transcriptionResult.status === 'completed' && transcriptionResult.summary_timestamps?.length > 0) {
@@ -203,42 +203,43 @@ const VideoPlayer = () => {
             <div className="mt-4">
               <h1 className="text-2xl font-bold">{video?.title}</h1>
               <div className="mt-4 bg-gray-800 rounded-lg p-4 shadow-lg">
-                <VideoSegments 
-                  videoId={id} 
+                <VideoSegments
+                  videoId={id}
                   onSegmentClick={handleSegmentClick}
                 />
               </div>
               <div className="mt-4 flex justify-between items-center">
                 <div className="flex items-center space-x-4">
-                  {watchPartyUrl ? (
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="text"
-                        value={watchPartyUrl}
-                        readOnly
-                        className="bg-gray-700 text-white px-3 py-2 rounded-l-md"
-                      />
-                      <button
-                        onClick={copyWatchPartyUrl}
-                        className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-r-md transition duration-300 ease-in-out"
-                      >
-                        <FaCopy />
-                      </button>
-                    </div>
-                  ) : (
-                    <>
-                      {!roomId && (
+                  {isLog && (
+                    watchPartyUrl ? (
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="text"
+                          value={watchPartyUrl}
+                          readOnly
+                          className="bg-gray-700 text-white px-3 py-2 rounded-l-md"
+                        />
                         <button
-                          onClick={startWatchParty}
-                          className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-full flex items-center space-x-2 transition duration-300 ease-in-out"
+                          onClick={copyWatchPartyUrl}
+                          className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-r-md transition duration-300 ease-in-out"
                         >
-                          <FaUserFriends />
-                          <span>Watch with Friends</span>
+                          <FaCopy />
                         </button>
-                      )}
-                    </>
+                      </div>
+                    ) : (
+                      <>
+                        {!roomId && (
+                          <button
+                            onClick={startWatchParty}
+                            className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-full flex items-center space-x-2 transition duration-300 ease-in-out"
+                          >
+                            <FaUserFriends />
+                            <span>Watch with Friends</span>
+                          </button>
+                        )}
+                      </>
+                    )
                   )}
-                  
                   <button
                     onClick={generateShortVideo}
                     disabled={isGeneratingShort}

@@ -21,10 +21,8 @@ const VideoSegments = ({ videoId, onSegmentClick }) => {
 
   const fetchVideoSegments = async () => {
     try {
-      // Fetch video details from YouTube API
-      const API_KEY = 'AIzaSyCLXbcD352-LJDxcVuNVJfo1zOWyL9quvQ';
       const response = await fetch(
-        `https://youtube.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoId}&key=${API_KEY}`
+        `https://youtube.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoId}&key=${process.env.REACT_APP_YT_KEY}`
       );
       const data = await response.json();
 

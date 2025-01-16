@@ -16,7 +16,6 @@ const Home = () => {
   const [scrollPosition, setScrollPosition] = useState(0);
 
   const {isLog, user} = useLogin();
-  const API_KEY = 'AIzaSyCLXbcD352-LJDxcVuNVJfo1zOWyL9quvQ';
 
   useEffect(() => {
     fetchFeaturedVideo();
@@ -43,7 +42,7 @@ const Home = () => {
   const fetchTrendingVideos = async () => {
     try {
       const response = await fetch(
-        `https://youtube.googleapis.com/youtube/v3/videos?part=snippet,statistics&chart=mostPopular&maxResults=12&key=${API_KEY}`
+        `https://youtube.googleapis.com/youtube/v3/videos?part=snippet,statistics&chart=mostPopular&maxResults=12&key=${process.env.REACT_APP_YT_KEY}`
       );
       const data = await response.json();
       const formattedVideos = data.items.map(video => ({
@@ -63,7 +62,7 @@ const Home = () => {
   const fetchFeaturedVideo = async () => {
     try {
       const response = await fetch(
-        `https://youtube.googleapis.com/youtube/v3/videos?part=snippet&chart=mostPopular&maxResults=1&key=${API_KEY}`
+        `https://youtube.googleapis.com/youtube/v3/videos?part=snippet&chart=mostPopular&maxResults=1&key=${process.env.REACT_APP_YT_KEY}`
       );
       const data = await response.json();
       const video = data.items[0];
@@ -87,7 +86,7 @@ const Home = () => {
 
       for (const categoryId of categoryIds) {
         const response = await fetch(
-          `https://youtube.googleapis.com/youtube/v3/videos?part=snippet&videoCategoryId=${categoryId}&chart=mostPopular&maxResults=6&key=${API_KEY}`
+          `https://youtube.googleapis.com/youtube/v3/videos?part=snippet&videoCategoryId=${categoryId}&chart=mostPopular&maxResults=6&key=${process.env.REACT_APP_YT_KEY}`
         );
         const data = await response.json();
         

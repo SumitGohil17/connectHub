@@ -8,8 +8,6 @@ const CategoryVideos = () => {
     const [videos, setVideos] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    const API_KEY = 'AIzaSyCLXbcD352-LJDxcVuNVJfo1zOWyL9quvQ';
-
     useEffect(() => {
         fetchCategoryVideos();
     }, [categoryId]);
@@ -17,7 +15,7 @@ const CategoryVideos = () => {
     const fetchCategoryVideos = async () => {
         try {
             const response = await fetch(
-                `https://youtube.googleapis.com/youtube/v3/videos?part=snippet,statistics&videoCategoryId=${categoryId}&chart=mostPopular&maxResults=20&key=${API_KEY}`
+                `https://youtube.googleapis.com/youtube/v3/videos?part=snippet,statistics&videoCategoryId=${categoryId}&chart=mostPopular&maxResults=20&key=${process.env.REACT_APP_YT_KEY}`
             );
             const data = await response.json();
 

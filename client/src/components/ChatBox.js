@@ -3,7 +3,10 @@ import { io } from 'socket.io-client';
 import Cookies from 'js-cookie';
 import { FaPaperPlane, FaSmile } from 'react-icons/fa';
 import { useParams } from 'react-router-dom'; // Assuming you're using react-router
-const socket = io('http://localhost:5001');
+const socket = io('http://localhost:5001', {
+  withCredentials: true,
+  transports: ['websocket', 'polling']
+});
 
 const ChatBox = ({chatRoomId, user}) => {
   const [messages, setMessages] = useState([]);
@@ -14,6 +17,7 @@ const ChatBox = ({chatRoomId, user}) => {
   const [messages1, setMessages1] = useState([]);
   const [input, setInput] = useState('');
   const [users, setUsers] = useState([]);
+  const [isMinimized, setIsMinimized] = useState(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -48,9 +52,20 @@ const ChatBox = ({chatRoomId, user}) => {
     }
   }, [urlRoomId]);
 
+  useEffect(() => {
+    if (chatRoomId && user) {
+      setRoomId(chatRoomId);
+      setUserName(user);
+      joinRoom();
+    }
+  }, [chatRoomId, user]);
+
   const joinRoom = () => {
-    if (chatRoomId) {
-      socket.emit('joinRoom', {roomId, userName });
+    if (chatRoomId && user) {
+      socket.emit('joinRoom', { 
+        roomId: chatRoomId, 
+        userName: user 
+      });
       setIsInRoom(true);
     }
   };
@@ -89,33 +104,20 @@ const ChatBox = ({chatRoomId, user}) => {
     }
   };
 
-
-
-
+  const toggleMinimize = () => {
+    setIsMinimized(!isMinimized);
+  };
 
   return (
-    <div className="flex flex-col h-full bg-gray-900 rounded-lg overflow-hidden">
-      <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-4">
+    <div className={`flex flex-col ${isMinimized ? 'h-12' : 'h-full'} bg-gray-900 rounded-lg overflow-hidden transition-all duration-300`}>
+      <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-4 flex justify-between items-center cursor-pointer" onClick={toggleMinimize}>
         <h2 className="text-xl font-bold text-white">Live Chat</h2>
-        <h2 className="text-xl font-bold text-white">{chatRoomId}</h2>
+        <button className="text-white">
+          {isMinimized ? '▲' : '▼'}
+        </button>
       </div>
 
-      {!isInRoom ? (
-        <div className='w-full mt-[50px] flex flex-col items-center justify-center'>
-          <input
-            type="text"
-            placeholder="Enter your name"
-            value={user}
-            className="flex-grow bg-gray-700 text-white px-4 py-2 rounded-sm focus:outline-none focus:ring-2 focus:ring-purple-500 mb-2"
-            onChange={(e) => setUserName(user)}
-            readOnly
-          />
-          <div className="flex space-x-2">
-            <button onClick={joinRoom} className="bg-blue-500 text-white rounded p-2 flex-grow">Join Room</button>
-            {/* <button onClick={createRoom} className="bg-green-500 text-white rounded p-2 flex-grow">Create Room</button> */}
-          </div>
-        </div>
-      ) : (
+      {!isMinimized && (
         <>
           <div className="flex-grow overflow-y-auto p-4 space-y-2">
             {messages1.map((message, index) => (

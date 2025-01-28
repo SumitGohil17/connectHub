@@ -12,11 +12,15 @@ const app = express();
 
 const server = http.createServer(app);
 const io = new Server(server, {
+    path: "/socket.io",
+    wssEngine: ['ws', 'wss'],
+    transports: ['websocket', 'polling'],
     cors: {
         origin: true, 
         methods: ["GET", "POST"],
         credentials: true 
-    }
+    },
+    allowEIO3: true
 });
 const port = 5001 || process.env.PORT;
 

@@ -3,9 +3,11 @@ import { io } from 'socket.io-client';
 import Cookies from 'js-cookie';
 import { FaPaperPlane, FaSmile } from 'react-icons/fa';
 import { useParams } from 'react-router-dom'; // Assuming you're using react-router
-const socket = io('http://localhost:5001', {
+const socket = io('https://connecthub-backend-fbtm.onrender.com', {
   withCredentials: true,
-  transports: ['websocket', 'polling']
+  transports: ['websocket', 'polling'],
+  reconnection: true,
+  reconnectionAttempts: 10,
 });
 
 const ChatBox = ({chatRoomId, user}) => {
@@ -18,6 +20,7 @@ const ChatBox = ({chatRoomId, user}) => {
   const [input, setInput] = useState('');
   const [users, setUsers] = useState([]);
   const [isMinimized, setIsMinimized] = useState(false);
+  const [isHost, setIsHost] = useState(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -56,15 +59,27 @@ const ChatBox = ({chatRoomId, user}) => {
     if (chatRoomId && user) {
       setRoomId(chatRoomId);
       setUserName(user);
+      
+      // Get meeting state from localStorage
+      const savedMeetingState = localStorage.getItem('meetingState');
+      if (savedMeetingState) {
+        const { savedIsMeetingHost } = JSON.parse(savedMeetingState);
+        setIsHost(savedIsMeetingHost);
+      }
+      
       joinRoom();
     }
   }, [chatRoomId, user]);
 
   const joinRoom = () => {
     if (chatRoomId && user) {
+      const savedMeetingState = localStorage.getItem('meetingState');
+      const isHost = savedMeetingState ? JSON.parse(savedMeetingState).savedIsMeetingHost : false;
+
       socket.emit('joinRoom', { 
         roomId: chatRoomId, 
-        userName: user 
+        userName: user,
+        isHost: isHost
       });
       setIsInRoom(true);
     }
@@ -121,11 +136,18 @@ const ChatBox = ({chatRoomId, user}) => {
         <>
           <div className="flex-grow overflow-y-auto p-4 space-y-2">
             {messages1.map((message, index) => (
-              <div key={index} className={`flex  ${message.userName === userName ? 'justify-end' : 'justify-start'}`}>
+              <div key={index} className={`flex ${message.userName === userName ? 'justify-end' : 'justify-start'}`}>
                 <div className="bg-purple-500 rounded-2xl rounded-tr-none px-4 py-2 max-w-xs">
-                  <p className="text-white text-[8px]">{message.userName}</p>
+                  <div className="flex items-center gap-1">
+                    <p className="text-white text-[8px]">{message.userName}</p>
+                    {message.isHost && (
+                      <span className="bg-yellow-500 text-[6px] px-1 rounded">Host</span>
+                    )}
+                  </div>
                   <p className="text-white text-sm">{message.msg}</p>
-                  <p className="text-xs text-purple-200 mt-1 text-right">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                  <p className="text-xs text-purple-200 mt-1 text-right">
+                    {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </p>
                 </div>
               </div>
             ))}

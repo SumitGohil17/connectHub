@@ -26,7 +26,6 @@ const CategoryVideos = () => {
                 duration: "10:00",
                 thumbnailUrl: video.snippet.thumbnails.high.url
             }));
-
             setVideos(formattedVideos);
             setIsLoading(false);
         } catch (error) {

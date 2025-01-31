@@ -1,7 +1,7 @@
 const express = require("express");
 const http = require('http');
 const { Server } = require('socket.io');
-require("dotenv").config({path: 'config.env'});
+require("dotenv").config({path: '.env'});
 const path = require("path");
 const { generateRoomId } = require("./utils"); 
 const connectToMongo = require('./db.connection');
@@ -39,40 +39,49 @@ app.use("/api/user", require("./routes/user.route"));
 
 const rooms = {};  
 
+const initializeRoom = (roomId, hostId = null, hostName = null) => {
+  if (!rooms[roomId]) {
+    rooms[roomId] = {
+      users: [],
+      isPlaying: true,
+      currentTime: 0,
+      videoUsers: [],
+      screenShare: null,
+      hostId: hostId,
+      hostName: hostName,
+      pinnedUser: null,
+      raisedHands: [],
+      chat: [],
+      settings: {
+        everyoneCanShareScreen: true,
+        everyoneCanToggleOthersMic: false,
+        everyoneCanToggleOthersCamera: false
+      }
+    };
+  }
+  return rooms[roomId];
+};
+
 io.on('connection', (socket) => {
   console.log('A user connected');
 
   socket.on("joinRoom", ({ roomId, userName }) => {
     if (!roomId || !userName) return;
-
-    socket.join(roomId);  
-    if (!rooms[roomId]) {
-      rooms[roomId] = {
-        users: [],
-        isPlaying: true,
-        currentTime: 0,
-        videoUsers: [], // Initialize empty array
-        screenShare: null,
-        hostId: null,
-        pinnedUser: null,
-        raisedHands: [],
-        chat: [],
-        settings: {
-          everyoneCanShareScreen: true,
-          everyoneCanToggleOthersMic: false,
-          everyoneCanToggleOthersCamera: false
-        }
-      };
+    
+    const room = initializeRoom(roomId);
+    socket.join(roomId);
+    socket.userName = userName; // Store username on socket for easy access
+    
+    if (!room.users.find(user => user.id === socket.id)) {
+      room.users.push({ id: socket.id, name: userName });
     }
-
-    rooms[roomId].users.push({ id: socket.id, name: userName });
 
     socket.to(roomId).emit("chat", {
       userName: "Admin",
       msg: `${userName} has joined the room!`,
     });
 
-    io.to(roomId).emit("userList", rooms[roomId].users);
+    io.to(roomId).emit("userList", room.users);
   });
 
   socket.on('video-action', ({ roomId, type }) => {
@@ -94,40 +103,76 @@ io.on('connection', (socket) => {
   
 
   socket.on("chat", ({ roomId, msg }) => {
-      if (msg.trim() === "") return;
-      const userIndex = rooms[roomId].users.findIndex(user => user.id === socket.id);
-      if (userIndex === -1) {
-          console.log(`User with socket ID ${socket.id} not found in room ${roomId}`);
-          return;
-      }
+    if (msg.trim() === "") return;
+    
+    // Initialize room if it doesn't exist
+    if (!rooms[roomId]) {
+      rooms[roomId] = {
+        users: [],
+        isPlaying: true,
+        currentTime: 0,
+        videoUsers: [],
+        screenShare: null,
+        hostId: null,
+        pinnedUser: null,
+        raisedHands: [],
+        chat: [],
+        settings: {
+          everyoneCanShareScreen: true,
+          everyoneCanToggleOthersMic: false,
+          everyoneCanToggleOthersCamera: false
+        }
+      };
+    }
+
+    // Check if user exists in the room
+    const userIndex = rooms[roomId]?.users?.findIndex(user => user.id === socket.id);
+    
+    // If user not found in room, try to get their name from socket
+    if (userIndex === -1) {
+      // Add user to room if they're not already in it
+      const userName = socket.userName || "Anonymous"; // Fallback name
+      rooms[roomId].users.push({ id: socket.id, name: userName });
       
-      const userName = rooms[roomId].users[userIndex].name; 
+      socket.join(roomId);
+      
       io.to(roomId).emit("chat", {
-          userName: userName, 
-          msg: msg,
+        userName,
+        msg
       });
+    } else {
+      // User found in room, proceed normally
+      const userName = rooms[roomId].users[userIndex].name;
+      io.to(roomId).emit("chat", {
+        userName,
+        msg
+      });
+    }
   });
 
   socket.on("disconnect", () => {
-      for (const roomId in rooms) {
-          const userIndex = rooms[roomId].users.findIndex(user => user.id === socket.id);
-          if (userIndex !== -1) {
-              const userName = rooms[roomId].users[userIndex].name; 
-              rooms[roomId].users.splice(userIndex, 1);
+    Object.keys(rooms).forEach(roomId => {
+      if (rooms[roomId] && rooms[roomId].users) {
+        const userIndex = rooms[roomId].users.findIndex(user => user.id === socket.id);
+        if (userIndex !== -1) {
+          const userName = rooms[roomId].users[userIndex].name;
+          rooms[roomId].users.splice(userIndex, 1);
 
-              socket.to(roomId).emit("chat", {
-                  userName: "Admin",
-                  msg: `${userName} has left the room.`,
-              });
+          socket.to(roomId).emit("chat", {
+            userName: "Admin",
+            msg: `${userName} has left the room.`
+          });
 
-              socket.to(roomId).emit("user-left-video", socket.id);
+          socket.to(roomId).emit("user-left-video", socket.id);
+          io.to(roomId).emit("userList", rooms[roomId].users);
 
-              io.to(roomId).emit("userList", rooms[roomId].users);
-              break; 
-          } else {
-              console.log(`User with socket ID ${socket.id} not found in room ${roomId}`);
+          // Clean up empty rooms
+          if (rooms[roomId].users.length === 0) {
+            delete rooms[roomId];
           }
+        }
       }
+    });
   });
 
   socket.on("join-video-room", ({ roomId, userId, userName }) => {
@@ -276,10 +321,10 @@ io.on('connection', (socket) => {
     socket.emit("host-status", { isHost });
   });
 
-  socket.on("request-to-join", ({ roomId, userId, userName }) => {
-    console.log("Join request received:", { roomId, userId, userName });
+  socket.on("request-to-join", ({ roomId, userId, userName, isHost }) => {
+    console.log("Join request received:", { roomId, userId: socket.id, userName });
 
-    if (!roomId || !userId || !userName) {
+    if (!roomId || !userName) {
       console.log("Missing required fields");
       socket.emit("join-rejected", { reason: "Invalid request" });
       return;
@@ -294,9 +339,8 @@ io.on('connection', (socket) => {
     const hostId = rooms[roomId].hostId;
     console.log("Host ID:", hostId);
 
-    if (userId === hostId || rooms[roomId].hostName === userName) {
+    if (isHost || rooms[roomId].hostName === userName) {
       console.log("Host joining - auto accepting");
-
       rooms[roomId].hostId = socket.id;
       socket.emit("join-accepted");
       socket.emit("host-status", { isHost: true });
@@ -306,7 +350,7 @@ io.on('connection', (socket) => {
     // For non-host users, notify host of join request
     console.log("Emitting join request to host:", hostId);
     io.to(hostId).emit("join-request", {
-      userId,
+      userId: socket.id,
       userName,
       roomId
     });
@@ -316,7 +360,6 @@ io.on('connection', (socket) => {
     console.log("Handling join request:", { roomId, userId, accepted });
     
     if (accepted) {
-      // Add user to room if accepted
       if (rooms[roomId] && !rooms[roomId].users.find(u => u.id === userId)) {
         rooms[roomId].users.push({ id: userId });
       }

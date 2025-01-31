@@ -7,9 +7,12 @@ import {
 } from 'react-icons/fa';
 import io from 'socket.io-client';
 
-const socket = io('http://localhost:5001', {
+const socket = io('https://connecthub-backend-fbtm.onrender.com', {
   withCredentials: true,
-  transports: ['websocket', 'polling']
+  transports: ['websocket', 'polling'],
+  path: '/socket.io',
+  reconnection: true,
+  reconnectionAttempts: 10,
 });
 
 const VideoCall = ({ chatRoomId, user, isMeetingHost, onCallEnd }) => {
@@ -52,7 +55,7 @@ const VideoCall = ({ chatRoomId, user, isMeetingHost, onCallEnd }) => {
 
   const joinMeeting = () => {
     setIsWaiting(true);
-    console.log("Requesting to join:", { chatRoomId, socketId: socket.id, userName: user });
+    console.log("Requesting to join:", { chatRoomId, socketId: socket?.id, userName: user });
     
     socket.emit("request-to-join", {
       roomId: chatRoomId,
@@ -92,8 +95,7 @@ const VideoCall = ({ chatRoomId, user, isMeetingHost, onCallEnd }) => {
   }, [isMeetingHost]);
 
   useEffect(() => {
-    if (!isMeetingHost && chatRoomId) {
-      // Non-host needs to request to join
+    if (!isMeetingHost && chatRoomId && socket.id) {
       socket.emit("request-to-join", {
         roomId: chatRoomId,
         userId: socket.id,
@@ -101,7 +103,7 @@ const VideoCall = ({ chatRoomId, user, isMeetingHost, onCallEnd }) => {
       });
       setIsWaitingForHost(true);
     }
-  }, [chatRoomId, isMeetingHost, user]);
+  }, [chatRoomId, isMeetingHost, user, socket.id]);
 
   useEffect(() => {
     startPreview(); // Only start preview initially

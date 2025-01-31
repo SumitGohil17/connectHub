@@ -7,10 +7,18 @@ import NavBar from "../../components/NavBar";
 import VideoSegments from '../../components/VideoSegments/VideoSegments';
 import VideoCall from '../../components/VideoCall';
 import { io } from "socket.io-client";
-const socket = io('http://localhost:5001', {
-  withCredentials: true,
-  transports: ['websocket', 'polling']
-});
+
+const SOCKET_URL ='https://connecthub-backend-fbtm.onrender.com'
+
+const socket = io(SOCKET_URL, {
+    transports: ['websocket'],
+    reconnection: true,
+    reconnectionAttempts: 5,
+    reconnectionDelay: 1000,
+    timeout: 10000,
+    withCredentials: true,
+    secure: process.env.NODE_ENV === 'production',
+  });
 
 
 
@@ -35,6 +43,7 @@ const VideoPlayer = () => {
   const [showMeetingOptions, setShowMeetingOptions] = useState(true);
   const [meetingMode, setMeetingMode] = useState(false);
   const [isInCall, setIsInCall] = useState(true);
+  const [socketId, setSocketId] = useState(null);
 
   useEffect(() => {
     fetchVideo(id);
@@ -86,35 +95,28 @@ const VideoPlayer = () => {
 
   useEffect(() => {
     const savedMeetingState = localStorage.getItem('meetingState');
-    if (savedMeetingState) {
-      const { 
-        savedChatRoomId, 
-        savedIsMeetingHost, 
-        savedMeetingMode,
-        savedIsInCall,
-        savedUserName 
-      } = JSON.parse(savedMeetingState);
+    if (savedMeetingState && user?.name && socket.id) {
+      const { savedChatRoomId, savedIsMeetingHost } = JSON.parse(savedMeetingState);
 
-      setChatRoomId(savedChatRoomId);
-      setIsMeetingHost(savedIsMeetingHost);
-      setMeetingMode(savedMeetingMode);
-      setIsInCall(savedIsInCall);
-      setShowMeetingOptions(false);
-
-      if (savedIsMeetingHost) {
-        socket.emit("request-to-join", {
-          roomId: savedChatRoomId,
-          userId: socket.id,
-          userName: user?.name
-        });
-      } else {
-        socket.emit('joinRoom', { 
-          roomId: savedChatRoomId, 
-          userName: user?.name 
-        });
-      }
+      socket.emit("request-to-join", {
+        roomId: savedChatRoomId,
+        userId: socket.id,
+        userName: user.name,
+        isHost: savedIsMeetingHost
+      });
     }
-  }, [user]);
+  }, [user, socketId]);
+
+  useEffect(() => {
+    socket.on("connect", () => {
+      setSocketId(socket.id);
+      console.log("Connected with socket ID:", socket.id);
+    });
+
+    return () => {
+      socket.off("connect");
+    };
+  }, []);
 
   useEffect(() => {
     if (meetingMode) {
@@ -278,12 +280,14 @@ const VideoPlayer = () => {
   };
 
   const createNewMeeting = () => {
-    if (!isLog) {
+    if (!isLog || !user?.name) {
       setShowLoginPrompt(true);
       return;
     }
+
     const meetingId = Math.random().toString(36).substring(2, 12);
     const url = `${window.location.origin}/video/${id}/${meetingId}`;
+    
     setMeetingUrl(url);
     setIsMeetingHost(true);
     setShowMeetingInfo(true);
@@ -294,12 +298,14 @@ const VideoPlayer = () => {
     socket.emit("create-meeting", { 
       roomId: meetingId, 
       hostId: socket.id,
-      hostName: user.name 
+      hostName: user.name
     });
 
     socket.emit('joinRoom', { 
       roomId: meetingId, 
-      userName: user.name 
+      userName: user.name,
+      userId: socket.id,
+      isHost: true
     });
 
     localStorage.setItem('meetingState', JSON.stringify({
@@ -307,7 +313,8 @@ const VideoPlayer = () => {
       savedIsMeetingHost: true,
       savedMeetingMode: true,
       savedIsInCall: true,
-      savedUserName: user.name
+      savedUserName: user.name,
+      savedHostId: socket.id
     }));
   };
 
@@ -471,7 +478,7 @@ const VideoPlayer = () => {
                       {isInCall ? (
                         <VideoCall 
                           chatRoomId={chatRoomId} 
-                          user={user.name}
+                          user={user?.name}
                           isMeetingHost={isMeetingHost}
                           onCallEnd={handleCallEnd}
                         />
@@ -486,7 +493,7 @@ const VideoPlayer = () => {
                           </button>
                         </div>
                       )}
-                      <ChatBox chatRoomId={chatRoomId} user={user.name} />
+                      <ChatBox chatRoomId={chatRoomId} user={user?.name} />
                     </>
                   )}
                 </div>

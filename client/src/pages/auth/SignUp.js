@@ -31,7 +31,7 @@ function SignUp() {
       alert('Passwords do not match');
     } else {
       try {
-          const response = await fetch('https://connect-hub-backend-dusky.vercel.app/api/user/signup', {
+          const response = await fetch('https://connecthub-backend-fbtm.onrender.com/api/user/signup', {
               method: 'POST',
               Credentials:"include",
               headers: {
